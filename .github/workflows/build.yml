@@ -26,8 +26,17 @@ jobs:
           java-version: '17'
 
       - name: Bungkus Web ke Android & Build APK
-        working-directory: Tabung-yuk/KalenderTabungan
         run: |
+          INDEX_FILE=$(find . -maxdepth 4 -name "index.html" | head -n 1)
+          if [ -z "$INDEX_FILE" ]; then
+            echo "ERROR: File index.html tidak ditemukan di repositori!"
+            ls -la
+            exit 1
+          fi
+          APP_DIR=$(dirname "$INDEX_FILE")
+          echo "Folder proyek ditemukan di: $APP_DIR"
+          cd "$APP_DIR"
+
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "Tabung Yuk" "com.tabungyuk.app" --web-dir .
@@ -36,8 +45,11 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
+          mkdir -p "$GITHUB_WORKSPACE/output-apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/output-apk/tabung-yuk.apk"
+
       - name: Upload File APK
         uses: actions/upload-artifact@v4
         with:
           name: tabung-yuk-apk
-          path: Tabung-yuk/KalenderTabungan/android/app/build/outputs/apk/debug/app-debug.apk
+          path: output-apk/tabung-yuk.apk
