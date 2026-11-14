@@ -25,22 +25,29 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install & Build APK
+      - name: Bungkus Web ke Android & Build APK
         run: |
-          GRADLE_FILE=$(find . -maxdepth 5 -name "gradlew" | head -n 1)
-          if [ -z "$GRADLE_FILE" ]; then
-            echo "File gradlew tidak ditemukan!"
+          INDEX_FILE=$(find . -maxdepth 5 -name "index.html" | head -n 1)
+          if [ -z "$INDEX_FILE" ]; then
+            echo "ERROR: File index.html tidak ditemukan di repositori!"
+            find . -maxdepth 4
             exit 1
           fi
-          ANDROID_DIR=$(dirname "$GRADLE_FILE")
-          echo "Folder Android ditemukan di: $ANDROID_DIR"
 
-          if [ -f "$ANDROID_DIR/../package.json" ]; then
-            cd "$ANDROID_DIR/.."
-            npm install
-          fi
+          APP_DIR=$(dirname "$INDEX_FILE")
+          echo "Folder index.html ditemukan di: $APP_DIR"
+          cd "$GITHUB_WORKSPACE/$APP_DIR"
 
-          cd "$GITHUB_WORKSPACE/$ANDROID_DIR"
+          rm -rf node_modules package.json package-lock.json capacitor.config.* android www
+          mkdir -p www
+          cp -r * www/ 2>/dev/null || true
+
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npx cap init "Tabung Yuk" "com.tabungyuk.app" --web-dir www
+          npx cap add android
+
+          cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
